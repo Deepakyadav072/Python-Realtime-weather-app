@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .weather-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .loading {
+            display: none;
+        }
+        .weather-icon {
+            font-size: 4rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">🌤️ Weather App</h1>
+            <p class="text-white/80 text-lg">Get real-time weather for any city worldwide</p>
+        </header>
+
+        <!-- Search Form -->
+        <div class="max-w-2xl mx-auto mb-8">
+            <div class="glass-effect rounded-2xl p-6 shadow-2xl">
+                <form id="weatherForm" class="space-y-4">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <input 
+                            type="text" 
+                            id="cityInput" 
+                            placeholder="Enter city name..." 
+                            value="London"
+                            class="flex-1 px-4 py-3 rounded-lg bg-white/20 text-white placeholder-white/60 border border-white/30 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all"
+                        >
+                        <select 
+                            id="unitsSelect" 
+                            class="px-4 py-3 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all"
+                        >
+                            <option value="metric">Metric (°C)</option>
+                            <option value="imperial">Imperial (°F)</option>
+                        </select>
+                        <button 
+                            type="submit" 
+                            class="px-6 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-white/90 transition-all transform hover:scale-105 shadow-lg"
+                        >
+                            Get Weather
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <label class="text-white flex items-center gap-2">
+                            <input type="checkbox" id="forecastCheckbox" class="rounded">
+                            <span>Show Forecast</span>
+                        </label>
+                        <select 
+                            id="forecastDays" 
+                            class="px-3 py-1 rounded-lg bg-white/20 text-white border border-white/30 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all disabled:opacity-50"
+                            disabled
+                        >
+                            <option value="3">3 Days</option>
+                            <option value="5">5 Days</option>
+                            <option value="7" selected>7 Days</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+            <p class="text-white mt-4">Fetching weather data...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden max-w-2xl mx-auto">
+            <div class="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-white">
+                <p id="errorText"></p>
+            </div>
+        </div>
+
+        <!-- Weather Display -->
+        <div id="weatherDisplay" class="hidden fade-in">
+            <!-- Current Weather -->
+            <div class="max-w-2xl mx-auto mb-8">
+                <div class="weather-card rounded-2xl p-8 shadow-2xl text-white">
+                    <div class="text-center mb-6">
+                        <h2 id="cityName" class="text-3xl font-bold mb-2"></h2>
+                        <p id="coordinates" class="text-white/80"></p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="text-center">
+                            <div id="weatherIcon" class="weather-icon mb-4"></div>
+                            <p id="condition" class="text-xl font-medium"></p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-white/80">Temperature:</span>
+                                <span id="temperature" class="text-2xl font-semibold"></span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-white/80">Feels Like:</span>
+                                <span id="feelsLike" class="text-xl"></span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-white/80">Humidity:</span>
+                                <span id="humidity" class="text-xl"></span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-white/80">Wind:</span>
+                                <span id="wind" class="text-xl"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forecast -->
+            <div id="forecastSection" class="hidden max-w-4xl mx-auto">
+                <h3 class="text-2xl font-bold text-white mb-6 text-center">Weather Forecast</h3>
+                <div id="forecastCards" class="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <!-- Forecast cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form elements
+        const form = document.getElementById('weatherForm');
+        const cityInput = document.getElementById('cityInput');
+        const unitsSelect = document.getElementById('unitsSelect');
+        const forecastCheckbox = document.getElementById('forecastCheckbox');
+        const forecastDays = document.getElementById('forecastDays');
+        
+        // Display elements
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const weatherDisplay = document.getElementById('weatherDisplay');
+        const forecastSection = document.getElementById('forecastSection');
+        
+        // Enable/disable forecast days based on checkbox
+        forecastCheckbox.addEventListener('change', () => {
+            forecastDays.disabled = !forecastCheckbox.checked;
+        });
+        
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const city = cityInput.value.trim();
+            const units = unitsSelect.value;
+            const forecastDaysValue = forecastCheckbox.checked ? parseInt(forecastDays.value) : 0;
+            
+            if (!city) {
+                showError('Please enter a city name');
+                return;
+            }
+            
+            await fetchWeather(city, units, forecastDaysValue);
+        });
+        
+        // Fetch weather data
+        async function fetchWeather(city, units, forecastDays) {
+            showLoading();
+            hideError();
+            hideWeather();
+            
+            try {
+                const params = new URLSearchParams({
+                    city: city,
+                    units: units,
+                    forecast_days: forecastDays
+                });
+                
+                const response = await fetch(`/weather?${params}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch weather data');
+                }
+                
+                displayWeather(data);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Display weather data
+        function displayWeather(data) {
+            const current = data.current;
+            const location = data.location;
+            
+            // Update current weather
+            document.getElementById('cityName').textContent = current.city;
+            document.getElementById('coordinates').textContent = `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`;
+            document.getElementById('weatherIcon').textContent = current.condition.split(' ')[0];
+            document.getElementById('condition').textContent = current.condition.split(' ').slice(1).join(' ');
+            document.getElementById('temperature').textContent = current.temperature;
+            document.getElementById('feelsLike').textContent = current.feels_like;
+            document.getElementById('humidity').textContent = current.humidity;
+            document.getElementById('wind').textContent = current.wind;
+            
+            // Update forecast if available
+            if (data.forecast) {
+                displayForecast(data.forecast);
+                forecastSection.classList.remove('hidden');
+            } else {
+                forecastSection.classList.add('hidden');
+            }
+            
+            weatherDisplay.classList.remove('hidden');
+        }
+        
+        // Display forecast
+        function displayForecast(forecast) {
+            const forecastCards = document.getElementById('forecastCards');
+            forecastCards.innerHTML = '';
+            
+            forecast.forEach(day => {
+                const card = document.createElement('div');
+                card.className = 'glass-effect rounded-lg p-4 text-white text-center';
+                card.innerHTML = `
+                    <div class="text-sm font-medium mb-2">${formatDate(day.date)}</div>
+                    <div class="text-2xl mb-2">${day.condition.split(' ')[0]}</div>
+                    <div class="text-xs mb-1">${day.condition.split(' ').slice(1).join(' ')}</div>
+                    <div class="text-sm font-semibold">${day.max_temp}</div>
+                    <div class="text-xs opacity-80">${day.min_temp}</div>
+                    <div class="text-xs mt-1 opacity-70">${day.precipitation}</div>
+                `;
+                forecastCards.appendChild(card);
+            });
+        }
+        
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                weekday: 'short'
+            });
+        }
+        
+        // UI helper functions
+        function showLoading() {
+            loading.style.display = 'block';
+        }
+        
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+        
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+        
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+        
+        function hideWeather() {
+            weatherDisplay.classList.add('hidden');
+        }
+        
+        // Load weather for default city on page load
+        window.addEventListener('load', () => {
+            fetchWeather('London', 'metric', 0);
+        });
+    </script>
+</body>
+</html>
