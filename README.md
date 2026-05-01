@@ -2,6 +2,10 @@
 
 A Python weather app with both CLI and web interfaces to get real-time weather and forecasts — no API key required!
 
+![image alt](https://github.com/Deepakyadav072/Python-Realtime-weather-app/blob/78a71961295a2df291c13622554534ba604f3ae0/weather.png)
+
+
+
 ## Features
 
 - 🌍 Current weather for any city worldwide
